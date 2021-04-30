@@ -6,7 +6,7 @@
             "command": "/usr/local/bin/cmake",
             "args": [
                 "--build",
-                "/Users/quentinwarnant/Dev/VulkanTest/build",
+                "${workspaceFolder}/build",
                 "--config",
                 "Debug",
                 "--target",
