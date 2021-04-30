@@ -1,0 +1,23 @@
+{
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "cmake active project",
+            "command": "/usr/local/bin/cmake",
+            "args": [
+                "--build",
+                "/Users/quentinwarnant/Dev/VulkanTest/build",
+                "--config",
+                "Debug",
+                "--target",
+                "Astro",
+                "-j",
+                "6"
+            ],
+            "options": {
+                "cwd": "/usr/bin"
+            }
+        }
+    ],
+    "version": "2.0.0"
+}

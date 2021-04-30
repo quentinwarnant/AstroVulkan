@@ -1,15 +1,47 @@
-project(vulkanHelloWorld)
+cmake_policy(SET CMP0048 NEW)
+project(Astro VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11  " )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17  " )
+#set (CMAKE_CXX_STANDARD 17)
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+add_executable(${PROJECT_NAME}
+
+	# Entry point
+	src/main.cpp
+
+)
 
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+set(CMAKE_BUILD_TYPE Debug)
+
+if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
+	message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
+endif()
+if( CMAKE_SOURCE_DIR MATCHES " " )
+	message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+endif()
+if( CMAKE_BINARY_DIR MATCHES " " )
+	message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+endif()
+
+
+# Compile external dependencies 
+add_subdirectory (external/glm-0.9.9.8)
+
+include_directories(
+	~/../../usr/local/Cellar/glfw/HEAD-0e9ec77/include/
+	external/glm-0.9.9.8/
+	src/
+	.
+	)
+	
 if (VULKAN_FOUND)
     message(STATUS "Found Vulkan, Including and Linking now")
     include_directories(${Vulkan_INCLUDE_DIRS})
     target_link_libraries (${PROJECT_NAME} ${Vulkan_LIBRARIES} glfw)
 endif (VULKAN_FOUND)
+	
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build)

@@ -1,6 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-//#include <vulkan/ulkan.h>
+//#include <vulkan/vulkan.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -9,7 +9,8 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-class HelloTriangleApplication {
+class HelloTriangleApplication 
+{
 public:
     void run() {
         initWindow();
@@ -61,6 +62,7 @@ private:
 };
 
 int main() {
+
     HelloTriangleApplication app;
 
     try {
