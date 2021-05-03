@@ -2,20 +2,27 @@ cmake_policy(SET CMP0048 NEW)
 project(Astro VERSION 0.0.1)
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17  " )
-#set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -std=c++17 -DDEBUG=2" )
 
 add_executable(${PROJECT_NAME}
 
 	# Entry point
 	src/main.cpp
 
+	# Game Framework
+	src/GameFramework/AstroApp.h	src/GameFramework/AstroApp.cpp 
+
 )
 
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 set(CMAKE_BUILD_TYPE Debug)
+
+message( ${CMAKE_BINARY_DIR} )
 
 if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
 	message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
@@ -32,10 +39,9 @@ endif()
 add_subdirectory (external/glm-0.9.9.8)
 
 include_directories(
-	~/../../usr/local/Cellar/glfw/HEAD-0e9ec77/include/
+	~/../../usr/local/include/
 	external/glm-0.9.9.8/
 	src/
-	.
 	)
 	
 if (VULKAN_FOUND)

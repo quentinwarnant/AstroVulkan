@@ -3,5 +3,6 @@
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "files.associations": {
         "algorithm": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

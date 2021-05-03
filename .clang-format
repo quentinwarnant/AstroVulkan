@@ -19,17 +19,17 @@ BinPackArguments: false
 BinPackParameters: false
 BraceWrapping:
   AfterClass: true
-  AfterControlStatement: false
-  AfterEnum: false
+  AfterControlStatement: true
+  AfterEnum: true
   AfterFunction: true
-  AfterNamespace: false
-  AfterObjCDeclaration: false
+  AfterNamespace: true
+  AfterObjCDeclaration: true
   AfterStruct: true
-  AfterUnion: false
+  AfterUnion: true
   BeforeCatch: false
-  BeforeElse: false
+  BeforeElse: true
   IndentBraces: false
-  SplitEmptyFunction: false
+  SplitEmptyFunction: true
   SplitEmptyNamespace: true
   SplitEmptyRecord: true
 BreakAfterJavaFieldAnnotations: true
@@ -92,7 +92,7 @@ SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: true
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
-Standard: Cpp11
-TabWidth: 8
-UseTab: Never
+Standard: Cpp17
+TabWidth: 4
+UseTab: Always
 

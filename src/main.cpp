@@ -1,72 +1,23 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-//#include <vulkan/vulkan.h>
+//#define GLFW_INCLUDE_VULKAN //this will make glfw include the vulkan header
+//#include <GLFW/glfw3.h>
+//#include <vulkan/vulkan.hpp>
 
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+// #define GLM_FORCE_RADIANS
+// #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// #include <glm/vec4.hpp>
+// #include <glm/mat4x4.hpp>
 
-class HelloTriangleApplication 
-{
-public:
-    void run() {
-        initWindow();
-        initVulkan();
-        mainLoop();
-        cleanup();
-    }
-
-private:
-    GLFWwindow* window;
-
-    void initWindow() {
-        if( !glfwInit() )
-		{
-			std::cout << "Failed to init GLFW\n";
-		}
-
-		if( glfwVulkanSupported() )
-		{
-			std::cout << "Vulkan Supported\n";
-		}
-		else
-		{
-			std::cout << "Vulkan NOT Supported\n";
-		}
-
-
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
-    }
-
-    void initVulkan() {
-
-    }
-
-    void mainLoop() {
-        while (!glfwWindowShouldClose(window)) {
-            glfwPollEvents();
-        }
-    }
-
-    void cleanup() {
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
-    }
-};
+#include <GameFramework/AstroApp.h>
 
 int main() {
-
-    HelloTriangleApplication app;
+    AstroApp app;
 
     try {
-        app.run();
+        app.Run();
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
