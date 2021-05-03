@@ -101,13 +101,6 @@ void AstroApp::CheckExtensions()
 #ifndef NDEBUG
 bool AstroApp::CheckValidationLayers()
 {
-	std::vector<int16_t> bleh;
-	bleh.push_back(5);
-	bleh.push_back(2);
-	bleh.push_back(1);
-	
-	int test[] ={5,2,3};
-
     uint32_t layerCount;
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
