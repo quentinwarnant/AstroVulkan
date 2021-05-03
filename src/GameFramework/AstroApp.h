@@ -11,7 +11,8 @@ public:
 private:
 	void InitWindow();
     void InitVulkan();
-	void CreateVulkanInstance();
+	void CreateVkInstance();
+	void CreateVkLogicalDevice();
     void MainLoop();
     void Shutdown();
 
@@ -22,8 +23,13 @@ private:
 	void PickGPU();
 	bool IsGPUSuitable(VkPhysicalDevice device);
 
+private:
 	GLFWwindow* m_window; 
 	VkInstance m_instance;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+	VkDevice m_logicalDevice;
+
+	//Queues
+	VkQueue graphicsQueue;
 
 };

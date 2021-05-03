@@ -5,6 +5,8 @@
 #include <iostream>
 #include <optional>
 
+#include <GameFramework/QueueFamilyIndices.h>
+
 constexpr uint16_t WIDTH = 800;
 constexpr uint16_t HEIGHT = 600;
 const std::vector<const char*> Validation_Layers = {
@@ -15,18 +17,6 @@ constexpr bool EnableValidationLayers = false;
 #else
 constexpr bool EnableValidationLayers = true;
 #endif
-
-namespace AstroAppSetupPrivates
-{
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-
-		bool IsComplete() {
-			return graphicsFamily.has_value();
-		}
-	};
-}
-
 
 void AstroApp::Run() 
 {
@@ -48,11 +38,12 @@ void AstroApp::InitWindow()
 void AstroApp::InitVulkan() 
 {
 	CheckExtensions();
-	CreateVulkanInstance();
+	CreateVkInstance();
 	PickGPU();
+	CreateVkLogicalDevice();
 }
 
-void AstroApp::CreateVulkanInstance()
+void AstroApp::CreateVkInstance()
 {
 	#ifndef NDEBUG
 	if(EnableValidationLayers && !CheckValidationLayers() )
@@ -72,13 +63,16 @@ void AstroApp::CreateVulkanInstance()
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
-#ifndef NDEBUG
-	createInfo.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
-	createInfo.ppEnabledLayerNames = Validation_Layers.data();
-#else
-	createInfo.enabledLayerCount = 0;
-#endif
 
+	if(EnableValidationLayers)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
+		createInfo.ppEnabledLayerNames = Validation_Layers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions;
@@ -104,6 +98,7 @@ void AstroApp::MainLoop()
 
 void AstroApp::Shutdown()
 {
+	vkDestroyDevice(m_logicalDevice,nullptr);
 	vkDestroyInstance(m_instance, nullptr);
 	glfwDestroyWindow(m_window);
     glfwTerminate();
@@ -179,9 +174,9 @@ void AstroApp::PickGPU()
 	}
 }
 
-AstroAppSetupPrivates::QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device)
 {
-	AstroAppSetupPrivates::QueueFamilyIndices indices;
+	QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -219,4 +214,46 @@ bool AstroApp::IsGPUSuitable(VkPhysicalDevice device)
 
 
 	return deviceSupportsRequiredFeatures && FindQueueFamilies(device).IsComplete();
+}
+
+void AstroApp::CreateVkLogicalDevice()
+{
+	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice);
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+	float queuePriority = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	//Declare which features we will be using (these should've been checked in "IsGPUSuitable")
+	//TODO: Add required features
+	VkPhysicalDeviceFeatures deviceFeatures{};
+
+	VkDeviceCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	createInfo.enabledExtensionCount = 0;
+
+	if (EnableValidationLayers)
+	{
+		createInfo.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
+		createInfo.ppEnabledLayerNames = Validation_Layers.data();
+	}
+	else
+	{
+		createInfo.enabledLayerCount = 0;
+	}
+
+	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create logical device!");
+	}
+
+	vkGetDeviceQueue(m_logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
+
 }
