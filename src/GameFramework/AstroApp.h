@@ -11,6 +11,7 @@ public:
 private:
 	void InitWindow();
     void InitVulkan();
+	void CreateVulkanInstance();
     void MainLoop();
     void Shutdown();
 
@@ -18,7 +19,11 @@ private:
 #ifndef NDEBUG
 	bool CheckValidationLayers();
 #endif
+	void PickGPU();
+	bool IsGPUSuitable(VkPhysicalDevice device);
 
 	GLFWwindow* m_window; 
 	VkInstance m_instance;
+	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+
 };
