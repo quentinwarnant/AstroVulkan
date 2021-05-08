@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
 	# Game Framework
 	src/GameFramework/AstroApp.h	src/GameFramework/AstroApp.cpp 
 	src/GameFramework/QueueFamilyIndices.h
+	src/GameFramework/SwapchainHelpers.h
 
 )
 
