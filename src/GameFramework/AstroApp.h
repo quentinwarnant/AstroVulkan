@@ -19,6 +19,7 @@ private:
 	void CreateSurface();
 	void CreateSwapchain();
 	void CreateImageViews();
+	void CreateRenderPass();
 	void CreateGraphicsPipeline();
 
     void MainLoop();
@@ -49,7 +50,9 @@ private:
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews; // Image views describes how we access an image (eg: 2D depth tex )
 
-
-
+	// Pipeline 
+	VkRenderPass m_renderPass;
+	VkPipelineLayout m_pipelineLayout;
+	VkPipeline m_graphicsPipeline;;
 
 };
