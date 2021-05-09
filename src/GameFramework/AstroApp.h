@@ -22,9 +22,13 @@ class AstroApp
 	void CreateGraphicsPipeline();
 	void CreateFramebuffers();
 	void CreateCommandPool();
+	void CreateCommandBuffers();
+	void CreateSemaphores();
 
 	void MainLoop();
 	void Shutdown();
+
+	void DrawFrame();
 
 	void CheckExtensions();
 #ifndef NDEBUG
@@ -60,5 +64,10 @@ class AstroApp
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 	// Commands
-	VkCommandPool commandPool;
+	VkCommandPool m_commandPool;
+	std::vector<VkCommandBuffer> m_commandBuffers;
+
+	// Rendering / Presenting
+	VkSemaphore m_imageAvailableSemaphore;
+	VkSemaphore m_renderFinishedSemaphore;
 };

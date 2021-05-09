@@ -158,6 +158,8 @@ void AstroApp::InitVulkan()
 	CreateGraphicsPipeline();
 	CreateFramebuffers();
 	CreateCommandPool();
+	CreateCommandBuffers();
+	CreateSemaphores();
 }
 
 void AstroApp::CreateVkInstance()
@@ -210,11 +212,63 @@ void AstroApp::MainLoop()
 	while( !glfwWindowShouldClose( m_window ) )
 	{
 		glfwPollEvents();
+		DrawFrame();
 	}
+}
+
+//Acquire an image from the swap chain
+//Execute the command buffer with that image as attachment in the framebuffer
+//Return the image to the swap chain for presentation
+void AstroApp::DrawFrame()
+{
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR( m_logicalDevice, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex );
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
+
+	// which semaphore to signal once rendering is done
+	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	if( vkQueueSubmit( m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to submit draw command buffer!" );
+	}
+
+	// Present
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
+	VkSwapchainKHR swapChains[] = { m_swapChain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapChains;
+	presentInfo.pImageIndices = &imageIndex;
+	presentInfo.pResults = nullptr; // Optional
+
+	vkQueuePresentKHR( m_presentQueue, &presentInfo );
 }
 
 void AstroApp::Shutdown()
 {
+	vkDestroySemaphore( m_logicalDevice, m_renderFinishedSemaphore, nullptr );
+	vkDestroySemaphore( m_logicalDevice, m_imageAvailableSemaphore, nullptr );
+
+	vkDestroyCommandPool( m_logicalDevice, m_commandPool, nullptr );
+
 	for( auto framebuffer : m_swapChainFramebuffers )
 	{
 		vkDestroyFramebuffer( m_logicalDevice, framebuffer, nullptr );
@@ -535,6 +589,14 @@ void AstroApp::CreateRenderPass()
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
 	// Create!
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -542,6 +604,8 @@ void AstroApp::CreateRenderPass()
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	if( vkCreateRenderPass( m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass ) != VK_SUCCESS )
 	{
@@ -745,4 +809,87 @@ void AstroApp::CreateFramebuffers()
 
 void AstroApp::CreateCommandPool()
 {
+	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies( m_physicalDevice, m_surface );
+
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+	poolInfo.flags = 0; // Optional
+
+	if( vkCreateCommandPool( m_logicalDevice, &poolInfo, nullptr, &m_commandPool ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to create command pool!" );
+	}
+}
+
+void AstroApp::CreateCommandBuffers()
+{
+	m_commandBuffers.resize( m_swapChainFramebuffers.size() );
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = m_commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
+
+	if( vkAllocateCommandBuffers( m_logicalDevice, &allocInfo, m_commandBuffers.data() ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to allocate command buffers!" );
+	}
+
+	for( size_t i = 0; i < m_commandBuffers.size(); i++ )
+	{
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = 0; // Optional
+		beginInfo.pInheritanceInfo = nullptr; // Optional
+
+		if( vkBeginCommandBuffer( m_commandBuffers[i], &beginInfo ) != VK_SUCCESS )
+		{
+			throw std::runtime_error( "failed to begin recording command buffer!" );
+		}
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_renderPass;
+		renderPassInfo.framebuffer = m_swapChainFramebuffers[i];
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = m_swapChainExtent;
+
+		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = 1;
+		renderPassInfo.pClearValues = &clearColor;
+
+		vkCmdBeginRenderPass( m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
+
+		// Bind Graphics pipeline
+		vkCmdBindPipeline( m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline );
+
+		// Draw triangle
+		vkCmdDraw( m_commandBuffers[i],
+		  3, // Vertex count
+		  1, // instance count
+		  0, // offset vertex -> gl_VertexIndex
+		  0 // offset instance index ->
+		);
+
+		vkCmdEndRenderPass( m_commandBuffers[i] );
+
+		if( vkEndCommandBuffer( m_commandBuffers[i] ) != VK_SUCCESS )
+		{
+			throw std::runtime_error( "failed to record command buffer!" );
+		}
+	}
+}
+
+void AstroApp::CreateSemaphores()
+{
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	if( vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore ) != VK_SUCCESS
+		|| vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to create semaphores!" );
+	}
 }
