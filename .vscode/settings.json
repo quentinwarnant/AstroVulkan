@@ -90,5 +90,7 @@
                 "cmd": "${workspaceFolder}/AstroTools/buildShaders.sh ${relativeFile}"
             }
         ]
-    }
+    },
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true
 }

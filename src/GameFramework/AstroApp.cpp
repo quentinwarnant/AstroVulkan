@@ -1,9 +1,9 @@
 #include <GameFramework/AstroApp.h>
 
-#include <stdexcept>
-#include <set>
 #include <iostream>
 #include <optional>
+#include <set>
+#include <stdexcept>
 
 #include <GameFramework/QueueFamilyIndices.h>
 #include <GameFramework/SwapchainHelpers.h>
@@ -12,11 +12,11 @@
 constexpr uint16_t WIDTH = 800;
 constexpr uint16_t HEIGHT = 600;
 const std::vector<const char*> Validation_Layers = {
-    "VK_LAYER_KHRONOS_validation"
+	"VK_LAYER_KHRONOS_validation"
 };
 
 const std::vector<const char*> Required_Device_Extensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 #ifdef NDEBUG
@@ -27,30 +27,33 @@ constexpr bool EnableValidationLayers = true;
 
 #pragma region Helpers
 
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+QueueFamilyIndices FindQueueFamilies( VkPhysicalDevice device, VkSurfaceKHR surface )
 {
 	QueueFamilyIndices indices;
 
 	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+	vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, nullptr );
 
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+	std::vector<VkQueueFamilyProperties> queueFamilies( queueFamilyCount );
+	vkGetPhysicalDeviceQueueFamilyProperties( device, &queueFamilyCount, queueFamilies.data() );
 
 	int i = 0;
-	for (const auto& queueFamily : queueFamilies) {
-		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+	for( const auto& queueFamily : queueFamilies )
+	{
+		if( queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT )
+		{
 			indices.graphicsFamily = i;
 
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-			if( presentSupport)
+			vkGetPhysicalDeviceSurfaceSupportKHR( device, i, surface, &presentSupport );
+			if( presentSupport )
 			{
 				indices.presentFamily = i;
 			}
 		}
 
-		if (indices.IsComplete()) {
+		if( indices.IsComplete() )
+		{
 			break;
 		}
 
@@ -60,62 +63,62 @@ QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surfa
 	return indices;
 }
 
-bool CheckDeviceExtensionSupport(VkPhysicalDevice device) {
-	
+bool CheckDeviceExtensionSupport( VkPhysicalDevice device )
+{
+
 	uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+	vkEnumerateDeviceExtensionProperties( device, nullptr, &extensionCount, nullptr );
+	std::vector<VkExtensionProperties> availableExtensions( extensionCount );
+	vkEnumerateDeviceExtensionProperties( device, nullptr, &extensionCount, availableExtensions.data() );
 
-    std::set<std::string> requiredExtensions(Required_Device_Extensions.begin(), Required_Device_Extensions.end());
+	std::set<std::string> requiredExtensions( Required_Device_Extensions.begin(), Required_Device_Extensions.end() );
 
-    for (const auto& extension : availableExtensions) 
+	for( const auto& extension : availableExtensions )
 	{
-        requiredExtensions.erase(extension.extensionName);
-    }
+		requiredExtensions.erase( extension.extensionName );
+	}
 
-    return requiredExtensions.empty();
-
+	return requiredExtensions.empty();
 }
 
-SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) 
+SwapChainSupportDetails QuerySwapChainSupport( VkPhysicalDevice device, VkSurfaceKHR surface )
 {
-    SwapChainSupportDetails details;
+	SwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR( device, surface, &details.capabilities );
 
 	// Check format support
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
-	if (formatCount != 0) 
+	vkGetPhysicalDeviceSurfaceFormatsKHR( device, surface, &formatCount, nullptr );
+	if( formatCount != 0 )
 	{
-		details.formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		details.formats.resize( formatCount );
+		vkGetPhysicalDeviceSurfaceFormatsKHR( device, surface, &formatCount, details.formats.data() );
 	}
 
 	// Check presentation modes
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
-	if (presentModeCount != 0) 
+	vkGetPhysicalDeviceSurfacePresentModesKHR( device, surface, &presentModeCount, nullptr );
+	if( presentModeCount != 0 )
 	{
-		details.presentModes.resize(presentModeCount);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		details.presentModes.resize( presentModeCount );
+		vkGetPhysicalDeviceSurfacePresentModesKHR( device, surface, &presentModeCount, details.presentModes.data() );
 	}
 
-    return details;
+	return details;
 }
 
-VkShaderModule CreateShaderModule(const std::vector<char>& code, VkDevice device)
+VkShaderModule CreateShaderModule( const std::vector<char>& code, VkDevice device )
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+	createInfo.pCode = reinterpret_cast<const uint32_t*>( code.data() );
 
 	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) 
+	if( vkCreateShaderModule( device, &createInfo, nullptr, &shaderModule ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create shader module!");
+		throw std::runtime_error( "failed to create shader module!" );
 	}
 
 	return shaderModule;
@@ -125,7 +128,7 @@ VkShaderModule CreateShaderModule(const std::vector<char>& code, VkDevice device
 #pragma endregion //Helpers
 
 
-void AstroApp::Run() 
+void AstroApp::Run()
 {
 	InitWindow();
 	InitVulkan();
@@ -136,13 +139,13 @@ void AstroApp::Run()
 void AstroApp::InitWindow()
 {
 	glfwInit();
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Tell glfw to not create an openGL context
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // disable resizing for now
+	glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API ); // Tell glfw to not create an openGL context
+	glfwWindowHint( GLFW_RESIZABLE, GLFW_FALSE ); // disable resizing for now
 
-	m_window = glfwCreateWindow(WIDTH, HEIGHT, "Astro", nullptr, nullptr);
+	m_window = glfwCreateWindow( WIDTH, HEIGHT, "Astro", nullptr, nullptr );
 }
 
-void AstroApp::InitVulkan() 
+void AstroApp::InitVulkan()
 {
 	CheckExtensions();
 	CreateVkInstance();
@@ -154,32 +157,33 @@ void AstroApp::InitVulkan()
 	CreateRenderPass();
 	CreateGraphicsPipeline();
 	CreateFramebuffers();
+	CreateCommandPool();
 }
 
 void AstroApp::CreateVkInstance()
 {
-	#ifndef NDEBUG
-	if(EnableValidationLayers && !CheckValidationLayers() )
+#ifndef NDEBUG
+	if( EnableValidationLayers && !CheckValidationLayers() )
 	{
-    	throw std::runtime_error("not all required validation layers were available!");
+		throw std::runtime_error( "not all required validation layers were available!" );
 	}
 #endif
 
 	VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Astro";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = "Astro";
+	appInfo.applicationVersion = VK_MAKE_VERSION( 1, 0, 0 );
+	appInfo.pEngineName = "No Engine";
+	appInfo.engineVersion = VK_MAKE_VERSION( 1, 0, 0 );
+	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	VkInstanceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 
-	if(EnableValidationLayers)
+	if( EnableValidationLayers )
 	{
-		createInfo.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
+		createInfo.enabledLayerCount = static_cast<uint32_t>( Validation_Layers.size() );
 		createInfo.ppEnabledLayerNames = Validation_Layers.data();
 	}
 	else
@@ -189,59 +193,60 @@ void AstroApp::CreateVkInstance()
 
 	uint32_t glfwExtensionCount = 0;
 	const char** glfwExtensions;
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+	glfwExtensions = glfwGetRequiredInstanceExtensions( &glfwExtensionCount );
 
 	createInfo.enabledExtensionCount = glfwExtensionCount;
 	createInfo.ppEnabledExtensionNames = glfwExtensions;
 	createInfo.enabledLayerCount = 0;
 
-	if( vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS )
+	if( vkCreateInstance( &createInfo, nullptr, &m_instance ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create instance!");
+		throw std::runtime_error( "failed to create instance!" );
 	}
 }
 
-void AstroApp::MainLoop() 
+void AstroApp::MainLoop()
 {
-	while (!glfwWindowShouldClose(m_window)) 
+	while( !glfwWindowShouldClose( m_window ) )
 	{
-        glfwPollEvents();
-    }
+		glfwPollEvents();
+	}
 }
 
 void AstroApp::Shutdown()
 {
-	 for (auto framebuffer : m_swapChainFramebuffers) 
-	 {
-        vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
-    }
-
-	vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
-	vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
-	
-	for (auto imageView : m_swapChainImageViews) 
+	for( auto framebuffer : m_swapChainFramebuffers )
 	{
-        vkDestroyImageView(m_logicalDevice, imageView, nullptr);
-    }
+		vkDestroyFramebuffer( m_logicalDevice, framebuffer, nullptr );
+	}
 
-	vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
-	vkDestroyDevice(m_logicalDevice,nullptr);
-	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-	vkDestroyInstance(m_instance, nullptr);
-	glfwDestroyWindow(m_window);
-    glfwTerminate();
+	vkDestroyPipeline( m_logicalDevice, m_graphicsPipeline, nullptr );
+	vkDestroyPipelineLayout( m_logicalDevice, m_pipelineLayout, nullptr );
+	vkDestroyRenderPass( m_logicalDevice, m_renderPass, nullptr );
+
+	for( auto imageView : m_swapChainImageViews )
+	{
+		vkDestroyImageView( m_logicalDevice, imageView, nullptr );
+	}
+
+	vkDestroySwapchainKHR( m_logicalDevice, m_swapChain, nullptr );
+	vkDestroyDevice( m_logicalDevice, nullptr );
+	vkDestroySurfaceKHR( m_instance, m_surface, nullptr );
+	vkDestroyInstance( m_instance, nullptr );
+	glfwDestroyWindow( m_window );
+	glfwTerminate();
 }
 
 void AstroApp::CheckExtensions()
 {
 	uint32_t extensionCount = 0;
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-	std::vector<VkExtensionProperties> extensions(extensionCount);
-	vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+	vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
+	std::vector<VkExtensionProperties> extensions( extensionCount );
+	vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, extensions.data() );
 	std::cout << "available extensions:\n";
 
-	for (const auto& extension : extensions) {
+	for( const auto& extension : extensions )
+	{
 		std::cout << '\t' << extension.extensionName << '\n';
 	}
 }
@@ -249,18 +254,18 @@ void AstroApp::CheckExtensions()
 #ifndef NDEBUG
 bool AstroApp::CheckValidationLayers()
 {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
 
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+	std::vector<VkLayerProperties> availableLayers( layerCount );
+	vkEnumerateInstanceLayerProperties( &layerCount, availableLayers.data() );
 
 	bool foundAllRequiredValidationLayers = true;
-	for(const auto& requiredValidationLayer : Validation_Layers)
+	for( const auto& requiredValidationLayer : Validation_Layers )
 	{
-		for(const auto& availableValidationLayer : availableLayers)
+		for( const auto& availableValidationLayer : availableLayers )
 		{
-			if( strcmp(requiredValidationLayer, availableValidationLayer.layerName) )
+			if( strcmp( requiredValidationLayer, availableValidationLayer.layerName ) )
 			{
 				// Found required layer in available layers, skip to the next one
 				break;
@@ -270,7 +275,7 @@ bool AstroApp::CheckValidationLayers()
 		}
 	}
 
-    return foundAllRequiredValidationLayers;
+	return foundAllRequiredValidationLayers;
 }
 #endif
 
@@ -279,75 +284,74 @@ void AstroApp::PickGPU()
 {
 
 	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
-	if (deviceCount == 0) 
+	vkEnumeratePhysicalDevices( m_instance, &deviceCount, nullptr );
+	if( deviceCount == 0 )
 	{
-		throw std::runtime_error("failed to find GPUs with Vulkan support!");
+		throw std::runtime_error( "failed to find GPUs with Vulkan support!" );
 	}
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
+	std::vector<VkPhysicalDevice> devices( deviceCount );
+	vkEnumeratePhysicalDevices( m_instance, &deviceCount, devices.data() );
 
-	for(const auto& device : devices)
+	for( const auto& device : devices )
 	{
 		// Find first suitablel GPU physical device
-		if( IsGPUSuitable(device) )
+		if( IsGPUSuitable( device ) )
 		{
 			m_physicalDevice = device;
 			break;
 		}
 	}
 
-	if( m_physicalDevice == VK_NULL_HANDLE)
+	if( m_physicalDevice == VK_NULL_HANDLE )
 	{
-		throw std::runtime_error("None of the GPU's available are suitable for this application");
+		throw std::runtime_error( "None of the GPU's available are suitable for this application" );
 	}
 }
 
-bool AstroApp::IsGPUSuitable(VkPhysicalDevice device)
+bool AstroApp::IsGPUSuitable( VkPhysicalDevice device )
 {
 	//name, type and supported Vulkan version
 	VkPhysicalDeviceProperties deviceProperties;
-	vkGetPhysicalDeviceProperties(device, &deviceProperties);
+	vkGetPhysicalDeviceProperties( device, &deviceProperties );
 
 	//support for optional features like texture compression, 64 bit floats and multi viewport rendering (VR)
 	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+	vkGetPhysicalDeviceFeatures( device, &deviceFeatures );
 
-	const bool deviceSupportsRequiredFeatures = 
-		deviceProperties.limits.maxComputeSharedMemorySize > 0;
+	const bool deviceSupportsRequiredFeatures =
+	  deviceProperties.limits.maxComputeSharedMemorySize > 0;
 
-	const bool deviceSupportsRequiredExtensions = CheckDeviceExtensionSupport(device);
+	const bool deviceSupportsRequiredExtensions = CheckDeviceExtensionSupport( device );
 
 	bool swapChainSupported = false;
 	if( deviceSupportsRequiredExtensions )
 	{
-		const SwapChainSupportDetails swapchainSupportDetails = QuerySwapChainSupport(device, m_surface);
-		swapChainSupported = swapchainSupportDetails.formats.empty() == false &&
-							swapchainSupportDetails.presentModes.empty() == false;
+		const SwapChainSupportDetails swapchainSupportDetails = QuerySwapChainSupport( device, m_surface );
+		swapChainSupported = swapchainSupportDetails.formats.empty() == false && swapchainSupportDetails.presentModes.empty() == false;
 	}
 
 	return deviceSupportsRequiredFeatures
-		&& deviceSupportsRequiredExtensions
-		&& FindQueueFamilies(device, m_surface).IsComplete()
-		&& swapChainSupported;
+		   && deviceSupportsRequiredExtensions
+		   && FindQueueFamilies( device, m_surface ).IsComplete()
+		   && swapChainSupported;
 }
 
 void AstroApp::CreateVkLogicalDevice()
 {
-	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, m_surface);
+	QueueFamilyIndices indices = FindQueueFamilies( m_physicalDevice, m_surface );
 
 	std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-	std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+	std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 	float queuePriority = 1.0f;
-	for (uint32_t queueFamily : uniqueQueueFamilies) 
+	for( uint32_t queueFamily : uniqueQueueFamilies )
 	{
 		VkDeviceQueueCreateInfo queueCreateInfo{};
 		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
 		queueCreateInfo.queueCount = 1;
 		queueCreateInfo.pQueuePriorities = &queuePriority;
-		queueCreateInfos.push_back(queueCreateInfo);
+		queueCreateInfos.push_back( queueCreateInfo );
 	}
 	//Declare which features we will be using (these should've been checked in "IsGPUSuitable")
 
@@ -358,15 +362,15 @@ void AstroApp::CreateVkLogicalDevice()
 	VkDeviceCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
-	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>( queueCreateInfos.size() );
 	createInfo.pEnabledFeatures = &deviceFeatures;
 
-	createInfo.enabledExtensionCount = static_cast<uint32_t>(Required_Device_Extensions.size());
+	createInfo.enabledExtensionCount = static_cast<uint32_t>( Required_Device_Extensions.size() );
 	createInfo.ppEnabledExtensionNames = Required_Device_Extensions.data();
 
-	if (EnableValidationLayers)
+	if( EnableValidationLayers )
 	{
-		createInfo.enabledLayerCount = static_cast<uint32_t>(Validation_Layers.size());
+		createInfo.enabledLayerCount = static_cast<uint32_t>( Validation_Layers.size() );
 		createInfo.ppEnabledLayerNames = Validation_Layers.data();
 	}
 	else
@@ -374,31 +378,30 @@ void AstroApp::CreateVkLogicalDevice()
 		createInfo.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_logicalDevice) != VK_SUCCESS) 
+	if( vkCreateDevice( m_physicalDevice, &createInfo, nullptr, &m_logicalDevice ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create logical device!");
+		throw std::runtime_error( "failed to create logical device!" );
 	}
 
-	vkGetDeviceQueue(m_logicalDevice, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-	vkGetDeviceQueue(m_logicalDevice, indices.presentFamily.value(), 0, &m_presentQueue);
-
-
+	vkGetDeviceQueue( m_logicalDevice, indices.graphicsFamily.value(), 0, &m_graphicsQueue );
+	vkGetDeviceQueue( m_logicalDevice, indices.presentFamily.value(), 0, &m_presentQueue );
 }
 
 void AstroApp::CreateSurface()
 {
-	if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
+	if( glfwCreateWindowSurface( m_instance, m_window, nullptr, &m_surface ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to create window surface!" );
+	}
 }
 
 void AstroApp::CreateSwapchain()
 {
-	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_physicalDevice, m_surface);
+	SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport( m_physicalDevice, m_surface );
 
-	VkSurfaceFormatKHR surfaceFormat = SwapchainHelpers::ChooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = SwapchainHelpers::ChooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = SwapchainHelpers::ChooseSwapExtent( m_window, swapChainSupport.capabilities);
+	VkSurfaceFormatKHR surfaceFormat = SwapchainHelpers::ChooseSwapSurfaceFormat( swapChainSupport.formats );
+	VkPresentModeKHR presentMode = SwapchainHelpers::ChooseSwapPresentMode( swapChainSupport.presentModes );
+	VkExtent2D extent = SwapchainHelpers::ChooseSwapExtent( m_window, swapChainSupport.capabilities );
 
 	// Keep for later reference
 	m_swapChainImageFormat = surfaceFormat.format;
@@ -411,9 +414,9 @@ void AstroApp::CreateSwapchain()
 
 	// Clamp image count to maximum
 	//    0 is special case meaning no maximum is defined
-	if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) 
+	if( swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount )
 	{
-    	imageCount = swapChainSupport.capabilities.maxImageCount;
+		imageCount = swapChainSupport.capabilities.maxImageCount;
 	}
 
 	// Start creating swapchain
@@ -430,19 +433,19 @@ void AstroApp::CreateSwapchain()
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 
-	QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, m_surface);
-	uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+	QueueFamilyIndices indices = FindQueueFamilies( m_physicalDevice, m_surface );
+	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
-	if (indices.graphicsFamily != indices.presentFamily)
+	if( indices.graphicsFamily != indices.presentFamily )
 	{
 		//Images can be used across multiple queue families without explicit ownership transfers.
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 		createInfo.queueFamilyIndexCount = 2;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
-	} 
+	}
 	else
 	{
-		//An image is owned by one queue family at a time and ownership must be explicitly 
+		//An image is owned by one queue family at a time and ownership must be explicitly
 		//transferred before using it in another queue family. This option offers the best performance.
 		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 		createInfo.queueFamilyIndexCount = 0; // Optional
@@ -460,21 +463,21 @@ void AstroApp::CreateSwapchain()
 
 	createInfo.oldSwapchain = VK_NULL_HANDLE; // if we want to reconstruct the swapchain on events like resizing, we'd use this
 
-	if (vkCreateSwapchainKHR(m_logicalDevice, &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) 
+	if( vkCreateSwapchainKHR( m_logicalDevice, &createInfo, nullptr, &m_swapChain ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create swap chain!");
+		throw std::runtime_error( "failed to create swap chain!" );
 	}
 
 	// Get handles to the swapchain images
-	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &imageCount, nullptr);
-	m_swapChainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &imageCount, m_swapChainImages.data());
+	vkGetSwapchainImagesKHR( m_logicalDevice, m_swapChain, &imageCount, nullptr );
+	m_swapChainImages.resize( imageCount );
+	vkGetSwapchainImagesKHR( m_logicalDevice, m_swapChain, &imageCount, m_swapChainImages.data() );
 }
 
 void AstroApp::CreateImageViews()
 {
-	m_swapChainImageViews.resize(m_swapChainImages.size());
-	for (size_t i = 0; i < m_swapChainImages.size(); i++) 
+	m_swapChainImageViews.resize( m_swapChainImages.size() );
+	for( size_t i = 0; i < m_swapChainImages.size(); i++ )
 	{
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -493,29 +496,29 @@ void AstroApp::CreateImageViews()
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(m_logicalDevice, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) 
+		if( vkCreateImageView( m_logicalDevice, &createInfo, nullptr, &m_swapChainImageViews[i] ) != VK_SUCCESS )
 		{
-			throw std::runtime_error("failed to create image views!");
+			throw std::runtime_error( "failed to create image views!" );
 		}
-	}	
+	}
 }
 
 
 void AstroApp::CreateRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_swapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+	colorAttachment.format = m_swapChainImageFormat;
+	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	// Stencil - not used 
+	// Stencil - not used
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	
+
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 	// Note : images need to be transitioned to specific layouts that are suitable for the operation that they're going to be involved in next.
-	// eg: 
+	// eg:
 	// VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color attachment
 	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the swap chain
 	// VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL: Images to be used as destination for a memory copy operation
@@ -524,7 +527,7 @@ void AstroApp::CreateRenderPass()
 	// Sub-Passes
 	// Subpasses are subsequent rendering operations that depend on the contents of framebuffers in previous passes,
 	VkAttachmentReference colorAttachmentRef{};
-	colorAttachmentRef.attachment = 0;	// Attachement index 0 (ie: layout(location = 0) out vec4 outColor)
+	colorAttachmentRef.attachment = 0; // Attachement index 0 (ie: layout(location = 0) out vec4 outColor)
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
@@ -540,9 +543,9 @@ void AstroApp::CreateRenderPass()
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 
-	if (vkCreateRenderPass(m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass) != VK_SUCCESS)
+	if( vkCreateRenderPass( m_logicalDevice, &renderPassInfo, nullptr, &m_renderPass ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create render pass!");
+		throw std::runtime_error( "failed to create render pass!" );
 	}
 }
 
@@ -551,22 +554,22 @@ void AstroApp::CreateGraphicsPipeline()
 {
 
 	// Load simple shader
-	auto simpleShaderVertCode = FileHelpers::ReadFile("src/Resources/Shaders/SimpleShader.vert.spirv");
-	auto simpleShaderFragCode = FileHelpers::ReadFile("src/Resources/Shaders/SimpleShader.frag.spirv");
+	auto simpleShaderVertCode = FileHelpers::ReadFile( "src/Resources/Shaders/SimpleShader.vert.spirv" );
+	auto simpleShaderFragCode = FileHelpers::ReadFile( "src/Resources/Shaders/SimpleShader.frag.spirv" );
 
-	if( simpleShaderVertCode.size() == 0)
+	if( simpleShaderVertCode.size() == 0 )
 	{
-		throw std::runtime_error("Simple Shader (vert) file size is 0!");
+		throw std::runtime_error( "Simple Shader (vert) file size is 0!" );
 	}
 
-	if( simpleShaderFragCode.size() == 0)
+	if( simpleShaderFragCode.size() == 0 )
 	{
-		throw std::runtime_error("Simple Shader (frag) file size is 0!");
+		throw std::runtime_error( "Simple Shader (frag) file size is 0!" );
 	}
 
 
-	VkShaderModule simpleShaderVertModule = CreateShaderModule(simpleShaderVertCode, m_logicalDevice);
-	VkShaderModule simpleShaderFragModule = CreateShaderModule(simpleShaderFragCode, m_logicalDevice);
+	VkShaderModule simpleShaderVertModule = CreateShaderModule( simpleShaderVertCode, m_logicalDevice );
+	VkShaderModule simpleShaderFragModule = CreateShaderModule( simpleShaderFragCode, m_logicalDevice );
 
 	// Vertex shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -582,7 +585,7 @@ void AstroApp::CreateGraphicsPipeline()
 	fragShaderStageInfo.module = simpleShaderFragModule;
 	fragShaderStageInfo.pName = "main";
 
-	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// Vertex shader input
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -602,14 +605,14 @@ void AstroApp::CreateGraphicsPipeline()
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float) m_swapChainExtent.width;
-	viewport.height = (float) m_swapChainExtent.height;
+	viewport.width = (float)m_swapChainExtent.width;
+	viewport.height = (float)m_swapChainExtent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	// Scissor rectangles define in which regions pixels will actually be stored
 	VkRect2D scissor{};
-	scissor.offset = {0, 0};
+	scissor.offset = { 0, 0 };
 	scissor.extent = m_swapChainExtent;
 
 	// Viewport creation info
@@ -648,7 +651,7 @@ void AstroApp::CreateGraphicsPipeline()
 	// Depth & stencil info - no need for this yet
 	//VkPipelineDepthStencilStateCreateInfo
 
-	// Blend mode 
+	// Blend mode
 	VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 	colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachment.blendEnable = VK_FALSE; // Disabled atm
@@ -679,9 +682,9 @@ void AstroApp::CreateGraphicsPipeline()
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	if (vkCreatePipelineLayout(m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) 
+	if( vkCreatePipelineLayout( m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_pipelineLayout ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create pipeline layout!");
+		throw std::runtime_error( "failed to create pipeline layout!" );
 	}
 
 	// Create pipeline
@@ -703,27 +706,26 @@ void AstroApp::CreateGraphicsPipeline()
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 
-	if (vkCreateGraphicsPipelines(m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) 
+	if( vkCreateGraphicsPipelines( m_logicalDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicsPipeline ) != VK_SUCCESS )
 	{
-		throw std::runtime_error("failed to create graphics pipeline!");
+		throw std::runtime_error( "failed to create graphics pipeline!" );
 	}
 
 
 	// Shader modules are loaded into the graphics pipeline, so we can destroy the local variables since they're not referenced directly
-	vkDestroyShaderModule( m_logicalDevice, simpleShaderFragModule, nullptr);
-	vkDestroyShaderModule(m_logicalDevice, simpleShaderVertModule, nullptr);
+	vkDestroyShaderModule( m_logicalDevice, simpleShaderFragModule, nullptr );
+	vkDestroyShaderModule( m_logicalDevice, simpleShaderVertModule, nullptr );
 }
 
 void AstroApp::CreateFramebuffers()
 {
-	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
+	m_swapChainFramebuffers.resize( m_swapChainImageViews.size() );
 
-	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
+	for( size_t i = 0; i < m_swapChainImageViews.size(); i++ )
 	{
-		VkImageView attachments[] = 
-		{
+		VkImageView attachments[] = {
 			m_swapChainImageViews[i]
-    	};
+		};
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -734,10 +736,13 @@ void AstroApp::CreateFramebuffers()
 		framebufferInfo.height = m_swapChainExtent.height;
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) 
+		if( vkCreateFramebuffer( m_logicalDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i] ) != VK_SUCCESS )
 		{
-			throw std::runtime_error("failed to create framebuffer!");
+			throw std::runtime_error( "failed to create framebuffer!" );
 		}
 	}
+}
 
+void AstroApp::CreateCommandPool()
+{
 }

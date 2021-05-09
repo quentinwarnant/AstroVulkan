@@ -5,15 +5,14 @@
 #include <vector>
 
 
-class AstroApp 
+class AstroApp
 {
-public:
-    void Run();
+  public:
+	void Run();
 
-private:
-
+  private:
 	void InitWindow();
-    void InitVulkan();
+	void InitVulkan();
 	void CreateVkInstance();
 	void CreateVkLogicalDevice();
 	void CreateSurface();
@@ -22,19 +21,20 @@ private:
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
 	void CreateFramebuffers();
+	void CreateCommandPool();
 
-    void MainLoop();
-    void Shutdown();
+	void MainLoop();
+	void Shutdown();
 
 	void CheckExtensions();
 #ifndef NDEBUG
 	bool CheckValidationLayers();
 #endif
 	void PickGPU();
-	bool IsGPUSuitable(VkPhysicalDevice device);
+	bool IsGPUSuitable( VkPhysicalDevice device );
 
-private:
-	GLFWwindow* m_window; 
+  private:
+	GLFWwindow* m_window;
 	VkInstance m_instance;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_logicalDevice;
@@ -51,7 +51,7 @@ private:
 	std::vector<VkImage> m_swapChainImages;
 	std::vector<VkImageView> m_swapChainImageViews; // Image views describes how we access an image (eg: 2D depth tex )
 
-	// Pipeline 
+	// Pipeline
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;
@@ -59,4 +59,6 @@ private:
 	// Framebuffer
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
+	// Commands
+	VkCommandPool commandPool;
 };
