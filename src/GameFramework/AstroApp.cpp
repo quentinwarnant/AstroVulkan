@@ -214,6 +214,9 @@ void AstroApp::MainLoop()
 		glfwPollEvents();
 		DrawFrame();
 	}
+
+	//Wait till not busy (so we're not in the middle of rendering something when trying to destroy the resources)
+	vkDeviceWaitIdle( m_logicalDevice );
 }
 
 //Acquire an image from the swap chain
