@@ -78,5 +78,17 @@
         "ranges": "cpp",
         "stop_token": "cpp",
         "cinttypes": "cpp"
+    },
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.vert$",
+                "cmd": "${workspaceFolder}/AstroTools/buildShaders.sh ${relativeFile}"
+            },
+            {
+                "match": "\\.frag$",
+                "cmd": "${workspaceFolder}/AstroTools/buildShaders.sh ${relativeFile}"
+            }
+        ]
     }
 }

@@ -20,8 +20,6 @@ add_executable(${PROJECT_NAME}
 	# Resources
 	src/Resources/Shaders/SimpleShader.vert.spirv src/Resources/Shaders/SimpleShader.frag.spirv
 
-
-
 )
 
 find_package(Vulkan REQUIRED)
