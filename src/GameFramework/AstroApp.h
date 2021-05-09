@@ -21,6 +21,7 @@ private:
 	void CreateImageViews();
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
+	void CreateFramebuffers();
 
     void MainLoop();
     void Shutdown();
@@ -53,6 +54,9 @@ private:
 	// Pipeline 
 	VkRenderPass m_renderPass;
 	VkPipelineLayout m_pipelineLayout;
-	VkPipeline m_graphicsPipeline;;
+	VkPipeline m_graphicsPipeline;
+
+	// Framebuffer
+	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
 };

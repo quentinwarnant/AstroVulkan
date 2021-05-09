@@ -153,6 +153,7 @@ void AstroApp::InitVulkan()
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
+	CreateFramebuffers();
 }
 
 void AstroApp::CreateVkInstance()
@@ -210,6 +211,11 @@ void AstroApp::MainLoop()
 
 void AstroApp::Shutdown()
 {
+	 for (auto framebuffer : m_swapChainFramebuffers) 
+	 {
+        vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
+    }
+
 	vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
 	vkDestroyRenderPass(m_logicalDevice, m_renderPass, nullptr);
@@ -706,4 +712,32 @@ void AstroApp::CreateGraphicsPipeline()
 	// Shader modules are loaded into the graphics pipeline, so we can destroy the local variables since they're not referenced directly
 	vkDestroyShaderModule( m_logicalDevice, simpleShaderFragModule, nullptr);
 	vkDestroyShaderModule(m_logicalDevice, simpleShaderVertModule, nullptr);
+}
+
+void AstroApp::CreateFramebuffers()
+{
+	m_swapChainFramebuffers.resize(m_swapChainImageViews.size());
+
+	for (size_t i = 0; i < m_swapChainImageViews.size(); i++)
+	{
+		VkImageView attachments[] = 
+		{
+			m_swapChainImageViews[i]
+    	};
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = m_renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = m_swapChainExtent.width;
+		framebufferInfo.height = m_swapChainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(m_logicalDevice, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i]) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("failed to create framebuffer!");
+		}
+	}
+
 }
