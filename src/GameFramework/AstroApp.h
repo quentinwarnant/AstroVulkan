@@ -18,6 +18,8 @@ private:
 	void CreateVkLogicalDevice();
 	void CreateSurface();
 	void CreateSwapchain();
+	void CreateImageViews();
+	void CreateGraphicsPipeline();
 
     void MainLoop();
     void Shutdown();
@@ -45,6 +47,8 @@ private:
 	VkExtent2D m_swapChainExtent;
 	VkSwapchainKHR m_swapChain;
 	std::vector<VkImage> m_swapChainImages;
+	std::vector<VkImageView> m_swapChainImageViews; // Image views describes how we access an image (eg: 2D depth tex )
+
 
 
 

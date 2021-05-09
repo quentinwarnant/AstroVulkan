@@ -33,3 +33,6 @@
 
 build/
 CMakeFiles/
+
+# Compiled SPIR-V shaders
+*.spirv 

@@ -14,6 +14,14 @@ add_executable(${PROJECT_NAME}
 	src/GameFramework/QueueFamilyIndices.h
 	src/GameFramework/SwapchainHelpers.h
 
+	# Helpers
+	src/Helpers/FileHelpers.h
+
+	# Resources
+	src/Resources/Shaders/SimpleShader.vert.spirv src/Resources/Shaders/SimpleShader.frag.spirv
+
+
+
 )
 
 find_package(Vulkan REQUIRED)

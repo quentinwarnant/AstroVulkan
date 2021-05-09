@@ -7,6 +7,7 @@
 
 #include <GameFramework/QueueFamilyIndices.h>
 #include <GameFramework/SwapchainHelpers.h>
+#include <Helpers/FileHelpers.h>
 
 constexpr uint16_t WIDTH = 800;
 constexpr uint16_t HEIGHT = 600;
@@ -104,6 +105,22 @@ SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurface
     return details;
 }
 
+VkShaderModule CreateShaderModule(const std::vector<char>& code, VkDevice device)
+{
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) 
+	{
+		throw std::runtime_error("failed to create shader module!");
+	}
+
+	return shaderModule;
+}
+
 
 #pragma endregion //Helpers
 
@@ -133,6 +150,8 @@ void AstroApp::InitVulkan()
 	PickGPU();
 	CreateVkLogicalDevice();
 	CreateSwapchain();
+	CreateImageViews();
+	CreateGraphicsPipeline();
 }
 
 void AstroApp::CreateVkInstance()
@@ -190,6 +209,11 @@ void AstroApp::MainLoop()
 
 void AstroApp::Shutdown()
 {
+	for (auto imageView : m_swapChainImageViews) 
+	{
+        vkDestroyImageView(m_logicalDevice, imageView, nullptr);
+    }
+
 	vkDestroySwapchainKHR(m_logicalDevice, m_swapChain, nullptr);
 	vkDestroyDevice(m_logicalDevice,nullptr);
 	vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -434,4 +458,77 @@ void AstroApp::CreateSwapchain()
 	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &imageCount, nullptr);
 	m_swapChainImages.resize(imageCount);
 	vkGetSwapchainImagesKHR(m_logicalDevice, m_swapChain, &imageCount, m_swapChainImages.data());
+}
+
+void AstroApp::CreateImageViews()
+{
+	m_swapChainImageViews.resize(m_swapChainImages.size());
+	for (size_t i = 0; i < m_swapChainImages.size(); i++) 
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = m_swapChainImages[i];
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = m_swapChainImageFormat;
+
+		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; //Color render target
+		createInfo.subresourceRange.baseMipLevel = 0;
+		createInfo.subresourceRange.levelCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = 0;
+		createInfo.subresourceRange.layerCount = 1;
+
+		if (vkCreateImageView(m_logicalDevice, &createInfo, nullptr, &m_swapChainImageViews[i]) != VK_SUCCESS) 
+		{
+			throw std::runtime_error("failed to create image views!");
+		}
+	}	
+}
+
+void AstroApp::CreateGraphicsPipeline()
+{
+
+	// Load simple shader
+	auto simpleShaderVertCode = FileHelpers::ReadFile("src/Resources/Shaders/SimpleShader.vert.spirv");
+	auto simpleShaderFragCode = FileHelpers::ReadFile("src/Resources/Shaders/SimpleShader.frag.spirv");
+
+	if( simpleShaderVertCode.size() == 0)
+	{
+		throw std::runtime_error("Simple Shader (vert) file size is 0!");
+	}
+
+	if( simpleShaderFragCode.size() == 0)
+	{
+		throw std::runtime_error("Simple Shader (frag) file size is 0!");
+	}
+
+
+	VkShaderModule simpleShaderVertModule = CreateShaderModule(simpleShaderVertCode, m_logicalDevice);
+	VkShaderModule simpleShaderFragModule = CreateShaderModule(simpleShaderFragCode, m_logicalDevice);
+
+	// Vertex
+	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderStageInfo.module = simpleShaderVertModule;
+	vertShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderStageInfo.module = simpleShaderFragModule;
+	fragShaderStageInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+
+
+
+	// Shader modules are loaded into the graphics pipeline, so we can destroy the local variables since they're not referenced directly
+	vkDestroyShaderModule( m_logicalDevice, simpleShaderFragModule, nullptr);
+	vkDestroyShaderModule(m_logicalDevice, simpleShaderVertModule, nullptr);
 }
