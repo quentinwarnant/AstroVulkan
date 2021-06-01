@@ -26,6 +26,8 @@ constexpr bool EnableValidationLayers = false;
 constexpr bool EnableValidationLayers = true;
 #endif
 
+constexpr int8_t MAX_FRAMES_IN_FLIGHT = 2;
+
 #pragma region Helpers
 
 QueueFamilyIndices FindQueueFamilies( VkPhysicalDevice device, VkSurfaceKHR surface )
@@ -227,14 +229,23 @@ void AstroApp::MainLoop()
 //Return the image to the swap chain for presentation
 void AstroApp::DrawFrame()
 {
+	vkWaitForFences( m_logicalDevice, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX );
+
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR( m_logicalDevice, m_swapChain, UINT64_MAX, m_imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex );
+	vkAcquireNextImageKHR( m_logicalDevice, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex );
+
+	if( m_imagesInFlight[imageIndex] != VK_NULL_HANDLE )
+	{
+		vkWaitForFences( m_logicalDevice, 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX );
+	}
+	m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
+
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 
-	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
@@ -244,11 +255,13 @@ void AstroApp::DrawFrame()
 	submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
 
 	// which semaphore to signal once rendering is done
-	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	if( vkQueueSubmit( m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE ) != VK_SUCCESS )
+	vkResetFences( m_logicalDevice, 1, &m_inFlightFences[m_currentFrame] );
+
+	if( vkQueueSubmit( m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame] ) != VK_SUCCESS )
 	{
 		throw std::runtime_error( "failed to submit draw command buffer!" );
 	}
@@ -266,12 +279,18 @@ void AstroApp::DrawFrame()
 	presentInfo.pResults = nullptr; // Optional
 
 	vkQueuePresentKHR( m_presentQueue, &presentInfo );
+
+	m_currentFrame = ( m_currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void AstroApp::Shutdown()
 {
-	vkDestroySemaphore( m_logicalDevice, m_renderFinishedSemaphore, nullptr );
-	vkDestroySemaphore( m_logicalDevice, m_imageAvailableSemaphore, nullptr );
+	for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+	{
+		vkDestroySemaphore( m_logicalDevice, m_renderFinishedSemaphores[i], nullptr );
+		vkDestroySemaphore( m_logicalDevice, m_imageAvailableSemaphores[i], nullptr );
+		vkDestroyFence( m_logicalDevice, m_inFlightFences[i], nullptr );
+	}
 
 	vkDestroyCommandPool( m_logicalDevice, m_commandPool, nullptr );
 
@@ -942,12 +961,25 @@ void AstroApp::CreateCommandBuffers()
 
 void AstroApp::CreateSemaphores()
 {
+	m_imageAvailableSemaphores.resize( MAX_FRAMES_IN_FLIGHT );
+	m_renderFinishedSemaphores.resize( MAX_FRAMES_IN_FLIGHT );
+	m_inFlightFences.resize( MAX_FRAMES_IN_FLIGHT );
+	m_imagesInFlight.resize( m_swapChainImages.size(), VK_NULL_HANDLE );
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	if( vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphore ) != VK_SUCCESS
-		|| vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphore ) != VK_SUCCESS )
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
 	{
-		throw std::runtime_error( "failed to create semaphores!" );
+		if( vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i] ) != VK_SUCCESS
+			|| vkCreateSemaphore( m_logicalDevice, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i] ) != VK_SUCCESS
+			|| vkCreateFence( m_logicalDevice, &fenceInfo, nullptr, &m_inFlightFences[i] ) != VK_SUCCESS )
+		{
+			throw std::runtime_error( "failed to create synchronization objects for a frame!" );
+		}
 	}
 }

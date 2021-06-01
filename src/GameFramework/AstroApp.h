@@ -79,6 +79,9 @@ class AstroApp
 	std::vector<VkCommandBuffer> m_commandBuffers;
 
 	// Rendering / Presenting
-	VkSemaphore m_imageAvailableSemaphore;
-	VkSemaphore m_renderFinishedSemaphore;
+	std::vector<VkSemaphore> m_imageAvailableSemaphores;
+	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkFence> m_inFlightFences;
+	std::vector<VkFence> m_imagesInFlight;
+	size_t m_currentFrame = 0;
 };
