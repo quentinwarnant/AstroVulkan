@@ -14,6 +14,7 @@ class AstroApp
 	void InitWindow();
 	void InitVulkan();
 	void CreateVkInstance();
+	void SetupDebugMessenger();
 	void CreateVkLogicalDevice();
 	void CreateSurface();
 	void CreateSwapchain();
@@ -30,16 +31,26 @@ class AstroApp
 
 	void DrawFrame();
 
+	void PopulateDebugMessengerCreateInfo( VkDebugUtilsMessengerCreateInfoEXT& createInfo );
+
+	std::vector<const char*> GetRequiredExtensions();
 	void CheckExtensions();
 #ifndef NDEBUG
 	bool CheckValidationLayers();
 #endif
+	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+	  VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	  VkDebugUtilsMessageTypeFlagsEXT messageType,
+	  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+	  void* pUserData );
+
 	void PickGPU();
 	bool IsGPUSuitable( VkPhysicalDevice device );
 
   private:
 	GLFWwindow* m_window;
 	VkInstance m_instance;
+	VkDebugUtilsMessengerEXT m_debugMessenger;
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkDevice m_logicalDevice;
 	VkSurfaceKHR m_surface;

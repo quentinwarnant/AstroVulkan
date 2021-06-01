@@ -16,6 +16,7 @@ add_executable(${PROJECT_NAME}
 
 	# Helpers
 	src/Helpers/FileHelpers.h
+	src/Helpers/VulkanHelpers.h
 
 	# Resources
 	src/Resources/Shaders/SimpleShader.vert.spirv src/Resources/Shaders/SimpleShader.frag.spirv
