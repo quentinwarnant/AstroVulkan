@@ -13,6 +13,10 @@ add_executable(${PROJECT_NAME}
 	src/GameFramework/AstroApp.h	src/GameFramework/AstroApp.cpp 
 	src/GameFramework/QueueFamilyIndices.h
 	src/GameFramework/SwapchainHelpers.h
+	src/GameFramework/Scene.h src/GameFramework/Scene.cpp
+
+	# Voxel
+	src/Voxel/VoxelObject.h src/Voxel/VoxelObject.cpp
 
 	# Helpers
 	src/Helpers/FileHelpers.h
@@ -20,6 +24,8 @@ add_executable(${PROJECT_NAME}
 
 	# Resources
 	src/Resources/Shaders/SimpleShader.vert.spirv src/Resources/Shaders/SimpleShader.frag.spirv
+	src/Resources/Shaders/SimpleShader.comp.spirv
+	
 
 )
 

@@ -37,8 +37,8 @@ BreakBeforeBinaryOperators: NonAssignment
 BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: true
 BreakBeforeTernaryOperators: true
-BreakConstructorInitializers: BeforeColon
-BreakConstructorInitializersBeforeComma: false
+BreakConstructorInitializers: BeforeComma
+BreakConstructorInitializersBeforeComma: true
 BreakStringLiterals: true
 ColumnLimit: 0
 CommentPragmas: '^ IWYU pragma:'

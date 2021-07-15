@@ -2,8 +2,10 @@
 
 #define GLFW_INCLUDE_VULKAN //this will make glfw include the vulkan header
 #include <GLFW/glfw3.h>
+#include <GameFramework/Scene.h>
 #include <vector>
 
+//------------------------------
 
 class AstroApp
 {
@@ -21,15 +23,21 @@ class AstroApp
 	void CreateImageViews();
 	void CreateRenderPass();
 	void CreateGraphicsPipeline();
+	void CreateComputePipeline();
 	void CreateFramebuffers();
 	void CreateCommandPool();
 	void CreateCommandBuffers();
+	void CreateComputeCommandBuffers();
 	void CreateSemaphores();
 
+	void LoadScene();
 	void MainLoop();
 	void Shutdown();
 
-	void DrawFrame();
+	void ComputeFrame( uint32_t imageIndex );
+	void DrawFrame( uint32_t imageIndex );
+
+	void SetComputeCommandsToBuffer( VkCommandBuffer& commandBuffer );
 
 	void PopulateDebugMessengerCreateInfo( VkDebugUtilsMessengerCreateInfoEXT& createInfo );
 
@@ -58,6 +66,7 @@ class AstroApp
 	// Queues
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
+	VkQueue m_computeQueue;
 
 	// Swapchain
 	VkFormat m_swapChainImageFormat;
@@ -68,20 +77,33 @@ class AstroApp
 
 	// Pipeline
 	VkRenderPass m_renderPass;
-	VkPipelineLayout m_pipelineLayout;
+	VkPipelineLayout m_graphicsPipelineLayout;
 	VkPipeline m_graphicsPipeline;
+	VkPipelineLayout m_computePipelineLayout;
+	VkPipeline m_computePipeline;
 
 	// Framebuffer
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 
+	// Memory
+	std::vector<VkDeviceMemory> m_deviceMemories;
+	std::vector<VkBuffer> m_computeDataBuffers;
+
+
 	// Commands
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;
+	std::vector<VkCommandBuffer> m_computeCommandBuffers;
 
 	// Rendering / Presenting
+	std::vector<VkSemaphore> m_computeReadySemaphores;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
 	std::vector<VkFence> m_inFlightFences;
 	std::vector<VkFence> m_imagesInFlight;
 	size_t m_currentFrame = 0;
+
+
+	// Scene data
+	std::unique_ptr<Scene> m_scene;
 };
