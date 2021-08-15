@@ -22,6 +22,5 @@ void main()
 {
    // vec4 res = imageLoad( inputImage, ivec2(gl_GlobalInvocationID.xy) ); 
    // imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), res);
-
-   dataOut = dataIn;
+   dataOut.val = dataIn.val + 3.2;
 }

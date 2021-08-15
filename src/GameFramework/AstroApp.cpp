@@ -184,11 +184,13 @@ void AstroApp::InitVulkan()
 	CreateImageViews();
 	CreateRenderPass();
 	CreateGraphicsPipeline();
-	CreateComputePipeline();
 	CreateFramebuffers();
+
 	CreateCommandPool();
-	CreateCommandBuffers();
 	CreateComputeCommandBuffers();
+	CreateComputePipeline();
+
+	CreateCommandBuffers();
 	CreateSemaphores();
 }
 
@@ -259,6 +261,8 @@ void AstroApp::MainLoop()
 
 		ComputeFrame( imageIndex );
 		DrawFrame( imageIndex );
+
+		PrintComputeBufferData();
 	}
 
 	//Wait till not busy (so we're not in the middle of rendering something when trying to destroy the resources)
@@ -377,10 +381,18 @@ void AstroApp::Shutdown()
 
 	vkDestroyCommandPool( m_logicalDevice, m_commandPool, nullptr );
 
+	for( auto computeDataBuffer : m_computeDataBuffers )
+	{
+		vkDestroyBuffer( m_logicalDevice, computeDataBuffer, nullptr );
+	}
+
 	for( auto framebuffer : m_swapChainFramebuffers )
 	{
 		vkDestroyFramebuffer( m_logicalDevice, framebuffer, nullptr );
 	}
+
+	vkDestroyDescriptorSetLayout( m_logicalDevice, m_computeDescriptorSetLayout, nullptr );
+	vkDestroyDescriptorPool( m_logicalDevice, m_computeDescriptorPool, nullptr );
 
 	vkDestroyPipeline( m_logicalDevice, m_computePipeline, nullptr );
 	vkDestroyPipeline( m_logicalDevice, m_graphicsPipeline, nullptr );
@@ -419,6 +431,7 @@ void AstroApp::SetComputeCommandsToBuffer( VkCommandBuffer& commandBuffer )
 	}
 
 	vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipeline );
+	vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_computePipelineLayout, 0, 1, &m_computeDescriptorSet, 0, 0 );
 
 	glm::vec3 dispatchGroupSize = glm::vec3( 1, 1, 1 );
 	vkCmdDispatch( commandBuffer, dispatchGroupSize.x, dispatchGroupSize.y, dispatchGroupSize.z );
@@ -428,7 +441,6 @@ void AstroApp::SetComputeCommandsToBuffer( VkCommandBuffer& commandBuffer )
 		throw std::runtime_error( "failed to record command buffer!" );
 	}
 }
-
 
 void AstroApp::PopulateDebugMessengerCreateInfo( VkDebugUtilsMessengerCreateInfoEXT& createInfo )
 {
@@ -1001,24 +1013,21 @@ void AstroApp::CreateComputePipeline()
 
 	// Pipeline Layout (uniforms)
 	//-----TODO : update the layout to add the example simple compute shader's input & output textures
-	//????????? is this all correct?
-	VkDescriptorSetLayoutBinding layoutBindingZero{};
-	layoutBindingZero.binding = 0;
-	layoutBindingZero.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	layoutBindingZero.descriptorCount = 1;
-	layoutBindingZero.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-	layoutBindingZero.pImmutableSamplers = nullptr;
+	VkDescriptorSetLayoutBinding descriptorLayoutBindingZero{};
+	descriptorLayoutBindingZero.binding = 0;
+	descriptorLayoutBindingZero.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorLayoutBindingZero.descriptorCount = 1;
+	descriptorLayoutBindingZero.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	descriptorLayoutBindingZero.pImmutableSamplers = nullptr;
 
-	VkDescriptorSetLayoutBinding layoutBindingOne{};
-	layoutBindingOne.binding = 1;
-	layoutBindingOne.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	layoutBindingOne.descriptorCount = 1;
-	layoutBindingOne.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-	layoutBindingOne.pImmutableSamplers = nullptr;
+	VkDescriptorSetLayoutBinding descriptorLayoutBindingOne{};
+	descriptorLayoutBindingOne.binding = 1;
+	descriptorLayoutBindingOne.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorLayoutBindingOne.descriptorCount = 1;
+	descriptorLayoutBindingOne.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+	descriptorLayoutBindingOne.pImmutableSamplers = nullptr;
 
-	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings{};
-	descriptorSetLayoutBindings.push_back( layoutBindingZero );
-	descriptorSetLayoutBindings.push_back( layoutBindingOne );
+	std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings{ descriptorLayoutBindingZero, descriptorLayoutBindingOne };
 
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{};
 	descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -1027,28 +1036,100 @@ void AstroApp::CreateComputePipeline()
 	descriptorSetLayoutCreateInfo.bindingCount = descriptorSetLayoutBindings.size();
 	descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBindings.data();
 
-
-	VkDescriptorSetLayout descriptorSetLayout{};
-	if( vkCreateDescriptorSetLayout( m_logicalDevice, &descriptorSetLayoutCreateInfo, nullptr, &descriptorSetLayout ) != VK_SUCCESS )
+	if( vkCreateDescriptorSetLayout( m_logicalDevice, &descriptorSetLayoutCreateInfo, nullptr, &m_computeDescriptorSetLayout ) != VK_SUCCESS )
 	{
 		throw std::runtime_error( "failed to create compute pipeline descriptor layout!" );
 	}
+
+	VkDescriptorPoolSize descriptorPoolSize = {};
+	descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	descriptorPoolSize.descriptorCount = 2;
+
+	VkDescriptorPoolCreateInfo descriptorPoolInfo = {};
+	descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	descriptorPoolInfo.pNext = nullptr;
+	descriptorPoolInfo.poolSizeCount = 1;
+	descriptorPoolInfo.pPoolSizes = &descriptorPoolSize;
+	descriptorPoolInfo.maxSets = 1;
+
+	if( vkCreateDescriptorPool( m_logicalDevice, &descriptorPoolInfo, nullptr, &m_computeDescriptorPool ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to create compute storage descriptor pool!" );
+	}
+
+	VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
+	descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	descriptorSetAllocInfo.pNext = nullptr;
+	descriptorSetAllocInfo.descriptorPool = m_computeDescriptorPool;
+	descriptorSetAllocInfo.pSetLayouts = &m_computeDescriptorSetLayout;
+	descriptorSetAllocInfo.descriptorSetCount = 1;
+	if( vkAllocateDescriptorSets( m_logicalDevice, &descriptorSetAllocInfo, &m_computeDescriptorSet ) != VK_SUCCESS )
+	{
+		throw std::runtime_error( "failed to create compute Descriptor set!" );
+	}
+
+	//TEMP, copied from buffer creation code - shouldn't be hardcoded & potentially different
+	const VkDeviceSize computeBufferMemorySize = sizeof( float );
+
+	VkDescriptorBufferInfo descriptorBufferInfo = {};
+	descriptorBufferInfo.buffer = m_computeDataBuffers[0];
+	descriptorBufferInfo.offset = 0;
+	descriptorBufferInfo.range = computeBufferMemorySize;
+
+	VkWriteDescriptorSet writeDescriptorSet = {};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstSet = m_computeDescriptorSet;
+	writeDescriptorSet.dstBinding = 0;
+	writeDescriptorSet.dstArrayElement = 0;
+	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSet.descriptorCount = 1;
+	writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
+
+	// TODO, instead of calling this twice, we can probably just make a VECTOR of VkWriteDescriptorSet & set the count to 2
+	vkUpdateDescriptorSets(
+	  m_logicalDevice,
+	  1, //descriptor set count
+	  &writeDescriptorSet,
+	  0,
+	  nullptr );
+
+
+	VkDescriptorBufferInfo descriptorBufferInfo2 = {};
+	descriptorBufferInfo2.buffer = m_computeDataBuffers[1];
+	descriptorBufferInfo2.offset = 0;
+	descriptorBufferInfo2.range = computeBufferMemorySize;
+
+	VkWriteDescriptorSet writeDescriptorSet2 = {};
+	writeDescriptorSet2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet2.dstSet = m_computeDescriptorSet;
+	writeDescriptorSet2.dstBinding = 1;
+	writeDescriptorSet2.dstArrayElement = 0;
+	writeDescriptorSet2.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSet2.descriptorCount = 1;
+	writeDescriptorSet2.pBufferInfo = &descriptorBufferInfo2;
+
+	// TODO, instead of calling this twice, we can probably just make a VECTOR of VkWriteDescriptorSet & set the count to 2
+	vkUpdateDescriptorSets(
+	  m_logicalDevice,
+	  1, //descriptor set count
+	  &writeDescriptorSet2,
+	  0,
+	  nullptr );
+
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.pNext = nullptr;
 	pipelineLayoutInfo.flags = 0;
 	pipelineLayoutInfo.setLayoutCount = 1; // Optional
-	pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout; // Optional
+	pipelineLayoutInfo.pSetLayouts = &m_computeDescriptorSetLayout; // Optional
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
 
 	if( vkCreatePipelineLayout( m_logicalDevice, &pipelineLayoutInfo, nullptr, &m_computePipelineLayout ) != VK_SUCCESS )
 	{
 		throw std::runtime_error( "failed to create pipeline layout!" );
 	}
-
 
 	VkComputePipelineCreateInfo computePipelineInfo{};
 	computePipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -1101,7 +1182,7 @@ void AstroApp::CreateCommandPool()
 	VkCommandPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-	poolInfo.flags = 0; // Optional
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
 
 	if( vkCreateCommandPool( m_logicalDevice, &poolInfo, nullptr, &m_commandPool ) != VK_SUCCESS )
 	{
@@ -1196,7 +1277,10 @@ void AstroApp::CreateComputeCommandBuffers()
 	};
 
 	// Allocate Data Buffers
-	m_computeDataBuffers.resize( 2 ); // input buffer & output buffer
+	const std::vector<float> initialBufferDataValues{ 7.4f, 1.3f };
+	const uint8_t dataBufferCount = initialBufferDataValues.size(); // input buffer & output buffer
+
+	m_computeDataBuffers.resize( dataBufferCount );
 	for( auto& computeDataBuffer : m_computeDataBuffers )
 	{
 		VkBufferCreateInfo bufferCreateInfo{};
@@ -1221,10 +1305,9 @@ void AstroApp::CreateComputeCommandBuffers()
 
 	m_deviceMemories.resize( m_swapChainFramebuffers.size() );
 
-	std::vector<float> initialBufferDataValues{ 7.4f, 1.3f };
-	for( uint32_t bufferIndex = 0; bufferIndex < m_computeCommandBuffers.size(); ++bufferIndex )
+	for( uint32_t bufferIndex = 0; bufferIndex < dataBufferCount; ++bufferIndex )
 	{
-		auto bufferMemory = m_deviceMemories[bufferIndex];
+		auto& bufferMemory = m_deviceMemories[bufferIndex];
 		uint32_t memoryTypeIndex = FindCompatibleMemoryTypeIndex( memoryProperties, memorySize );
 
 		// found our memory type!
@@ -1244,18 +1327,38 @@ void AstroApp::CreateComputeCommandBuffers()
 			throw std::runtime_error( "failed to bind memory to compute buffer!" );
 		}
 
-		float* payload;
-		void* payloadPtr = (void*)payload;
+		void* payloadPtr = nullptr;
 		if( vkMapMemory( m_logicalDevice, bufferMemory, 0, memorySize, 0, &payloadPtr ) != VK_SUCCESS )
 		{
 			throw std::runtime_error( "failed to map memory to compute buffer!" );
 		}
 
-		//for( uint32_t k = 0; k < memorySize / sizeof( int32_t ); k++ )
-		for( uint32_t k = 0; k < 1; k++ )
+		memcpy( payloadPtr, &initialBufferDataValues[bufferIndex], memorySize );
+		// TODO: check Data allignment?
+		vkUnmapMemory( m_logicalDevice, bufferMemory );
+	}
+}
+
+void AstroApp::PrintComputeBufferData()
+{
+	const VkDeviceSize memorySize = sizeof( float ); // whatever size of memory we require
+
+	for( uint32_t bufferIndex = 0; bufferIndex < 2; ++bufferIndex )
+	{
+		auto bufferMemory = m_deviceMemories[bufferIndex];
+
+		float copyTargetValue = 0;
+		void* copyValuePtr = &copyTargetValue;
+		void* gpuMemoryPtr = nullptr;
+		if( vkMapMemory( m_logicalDevice, bufferMemory, 0, memorySize, 0, &gpuMemoryPtr ) != VK_SUCCESS )
 		{
-			payload[k] = initialBufferDataValues[bufferIndex];
+			throw std::runtime_error( "failed to map memory to compute buffer!" );
 		}
+
+		memcpy( copyValuePtr, gpuMemoryPtr, memorySize );
+
+		std::cout << "Readback: " << ( copyTargetValue ) << "\n";
+
 		vkUnmapMemory( m_logicalDevice, bufferMemory );
 	}
 }

@@ -56,6 +56,8 @@ class AstroApp
 	bool IsGPUSuitable( VkPhysicalDevice device );
 
   private:
+	void PrintComputeBufferData();
+
 	GLFWwindow* m_window;
 	VkInstance m_instance;
 	VkDebugUtilsMessengerEXT m_debugMessenger;
@@ -81,6 +83,10 @@ class AstroApp
 	VkPipeline m_graphicsPipeline;
 	VkPipelineLayout m_computePipelineLayout;
 	VkPipeline m_computePipeline;
+
+	VkDescriptorPool m_computeDescriptorPool;
+	VkDescriptorSetLayout m_computeDescriptorSetLayout;
+	VkDescriptorSet m_computeDescriptorSet;
 
 	// Framebuffer
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
